@@ -602,9 +602,8 @@ services:
     command: [
       "run",
       "--server.http.listen-addr=0.0.0.0:12345", # needed for access to debug UI
-      "--config.format=otelcol",                 # telling Alloy to use an OTel collector's config
       "--stability.level=experimental",          # telling Alloy to use experimental components from OTel config
-      "/etc/otelcol-config.yml"
+      "/etc/config.alloy"
     ]
     user: 0:0
     volumes:
@@ -612,6 +611,7 @@ services:
       - ${DOCKER_SOCK}:/var/run/docker.sock:ro
       - ${OTEL_COLLECTOR_CONFIG}:/etc/otelcol-config.yml
       - ${OTEL_COLLECTOR_CONFIG_EXTRAS}:/etc/otelcol-config-extras.yml
+      - ./src/otel-collector/config.alloy:/etc/config.alloy
     ports:
       - "${OTEL_COLLECTOR_PORT_GRPC}"
       - "${OTEL_COLLECTOR_PORT_HTTP}"
@@ -653,3 +653,14 @@ services:
       - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
     logging: *logging
 
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+    ports:
+      - "3100"
+    logging: *logging
