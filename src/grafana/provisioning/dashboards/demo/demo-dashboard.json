@@ -380,8 +380,8 @@
     },
     {
       "datasource": {
-        "type": "grafana-opensearch-datasource",
-        "uid": "webstore-logs"
+        "type": "loki",
+        "uid": "webstore-logs-loki"
       },
       "description": "",
       "fieldConfig": {
@@ -448,48 +448,55 @@
       "pluginVersion": "11.5.2",
       "targets": [
         {
-          "alias": "",
-          "bucketAggs": [
-            {
-              "field": "severity.text.keyword",
-              "id": "3",
-              "settings": {
-                "min_doc_count": "1",
-                "order": "desc",
-                "orderBy": "_count",
-                "size": "0"
-              },
-              "type": "terms"
-            }
-          ],
           "datasource": {
-            "type": "grafana-opensearch-datasource",
-            "uid": "webstore-logs"
+            "type": "loki",
+            "uid": "webstore-logs-loki"
           },
-          "format": "table",
-          "metrics": [
-            {
-              "id": "1",
-              "type": "count"
-            }
-          ],
-          "query": "search source=otel\n| where resource.service.name=\"${service}\"\n| stats count() by severity.text",
-          "queryType": "PPL",
-          "refId": "A",
-          "timeField": "observedTimestamp"
+          "direction": "backward",
+          "editorMode": "builder",
+          "expr": "{service_name=\"$service\"} | logfmt",
+          "queryType": "range",
+          "refId": "A"
         }
       ],
       "title": "Log Records by Severity",
       "transformations": [
         {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "source": "labels"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "id": {
+                "aggregations": [
+                  "count"
+                ],
+                "operation": "aggregate"
+              },
+              "severity_text": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {},
             "includeByName": {},
-            "indexByName": {},
+            "indexByName": {
+              "id (count)": 0,
+              "severity_text": 1
+            },
             "renameByName": {
-              "Count": "",
-              "severity.text.keyword": "Severity"
+              "id (count)": "Count()",
+              "severity_text": ""
             }
           }
         }
@@ -498,8 +505,8 @@
     },
     {
       "datasource": {
-        "type": "grafana-opensearch-datasource",
-        "uid": "webstore-logs"
+        "type": "loki",
+        "uid": "webstore-logs-loki"
       },
       "fieldConfig": {
         "defaults": {
@@ -587,38 +594,33 @@
       "pluginVersion": "11.5.2",
       "targets": [
         {
-          "alias": "",
-          "bucketAggs": [],
           "datasource": {
-            "type": "grafana-opensearch-datasource",
-            "uid": "webstore-logs"
+            "type": "loki",
+            "uid": "webstore-logs-loki"
           },
-          "format": "table",
-          "hide": false,
-          "metrics": [
-            {
-              "id": "1",
-              "settings": {
-                "order": "desc",
-                "size": "100",
-                "useTimeRange": true
-              },
-              "type": "raw_data"
-            }
-          ],
-          "query": "search source=otel\n| where resource.service.name=\"${service}\"\n| sort - observedTimestamp \n| head 100",
-          "queryType": "PPL",
-          "refId": "A",
-          "timeField": "observedTimestamp"
+          "direction": "backward",
+          "editorMode": "builder",
+          "expr": "{service_name=\"$service\"} | logfmt --keep-empty",
+          "maxLines": 100,
+          "queryType": "range",
+          "refId": "A"
         }
       ],
       "title": "Log Records (100 recent entries)",
       "transformations": [
         {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "source": "labels"
+          }
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {
-              "@timestamp": true
+              "@timestamp": true,
+              "labels": true
             },
             "includeByName": {},
             "indexByName": {
