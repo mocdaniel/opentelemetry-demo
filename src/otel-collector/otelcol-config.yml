@@ -38,17 +38,14 @@ processors:
           - replace_pattern(name, "\\?.*", "")
           - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
 
-connectors:
-  spanmetrics:
-
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [memory_limiter, transform, batch]
-      exporters: [otlp, debug, spanmetrics]
+      exporters: [otlp, debug]
     metrics:
-      receivers: [otlp, spanmetrics]
+      receivers: [otlp]
       processors: [memory_limiter, batch]
       exporters: [otlphttp/prometheus, debug]
     logs:
