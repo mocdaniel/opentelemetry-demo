@@ -1,0 +1,154 @@
+//#############
+//# Receivers #
+//#############
+
+otelcol.receiver.otlp "default" {
+  grpc {
+    endpoint = sys.env("OTEL_COLLECTOR_HOST") + ":" + sys.env("OTEL_COLLECTOR_PORT_GRPC")
+  }
+
+  http {
+    endpoint = sys.env("OTEL_COLLECTOR_HOST") + ":" + sys.env("OTEL_COLLECTOR_PORT_HTTP")
+
+    cors {
+      allowed_origins = ["http://*", "https://*"]
+    }
+  }
+
+  output {
+    metrics = [otelcol.processor.memory_limiter.default.input]
+    logs    = [otelcol.processor.memory_limiter.default.input]
+    traces  = [otelcol.processor.memory_limiter.default.input]
+  }
+}
+
+//#############
+//# Exporters #
+//#############
+
+otelcol.exporter.debug "debug" { }
+
+otelcol.exporter.otlp "jaeger" {
+  client {
+    endpoint = "jaeger:4317"
+
+    tls {
+      insecure = true
+    }
+  }
+}
+
+otelcol.exporter.otlphttp "prometheus" {
+  client {
+    endpoint = "http://prometheus:9090/api/v1/otlp"
+
+    tls {
+      insecure = true
+    }
+
+    http2_ping_timeout = "0s"
+  }
+}
+
+otelcol.exporter.otlphttp "loki" {
+  client {
+    endpoint = "http://loki:3100/otlp"
+
+    tls {
+      insecure = true
+    }
+
+    http2_ping_timeout = "0s"
+  }
+}
+
+//##############
+//# Processors #
+//##############
+
+otelcol.processor.batch "default" {
+  output {
+    metrics = [
+      otelcol.exporter.otlphttp.prometheus.input,
+      otelcol.exporter.debug.debug.input,
+    ]
+    logs    = [
+      otelcol.exporter.otlphttp.loki.input,
+      otelcol.exporter.debug.debug.input,
+    ]
+    traces  = [
+      otelcol.exporter.otlp.jaeger.input,
+      otelcol.exporter.debug.debug.input,
+      otelcol.connector.spanmetrics.default.input,
+    ]
+  }
+}
+
+otelcol.processor.batch "spanmetrics" {
+  output {
+    metrics = [
+      otelcol.exporter.otlphttp.prometheus.input,
+      otelcol.exporter.debug.debug.input,
+    ]
+  }
+}
+
+otelcol.processor.memory_limiter "default" {
+  check_interval         = "5s"
+  limit_percentage       = 80
+  spike_limit_percentage = 25
+
+  output {
+    metrics = [otelcol.processor.batch.default.input]
+    logs    = [otelcol.processor.batch.default.input]
+    traces  = [otelcol.processor.transform.default.input]
+  }
+}
+
+otelcol.processor.memory_limiter "spanmetrics" {
+  check_interval         = "5s"
+  limit_percentage       = 80
+  spike_limit_percentage = 25
+
+  output {
+    metrics = [otelcol.processor.batch.spanmetrics.input]
+  }
+}
+
+otelcol.processor.transform "default" {
+  error_mode = "ignore"
+
+  trace_statements {
+    context    = "span"
+    statements = [
+      `replace_pattern(name, "\\?.*", "")`,
+      `replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")`,
+    ]
+  }
+
+  output {
+    traces = [otelcol.processor.batch.default.input]
+  }
+}
+
+//##############
+//# Connectors #
+//##############
+
+otelcol.connector.spanmetrics "default" {
+  histogram {
+    explicit { }
+  }
+
+  output {
+    metrics = [otelcol.processor.memory_limiter.spanmetrics.input]
+  }
+}
+
+//##########
+//# Config #
+//##########
+
+livedebugging {
+  enabled = true
+}
