@@ -603,6 +603,7 @@ services:
       "run",
       "--server.http.listen-addr=0.0.0.0:12345", # needed for access to debug UI
       "--config.format=otelcol",                 # telling Alloy to use an OTel collector's config
+      "--stability.level=experimental",          # telling Alloy to use experimental components from OTel config
       "/etc/otelcol-config.yml"
     ]
     user: 0:0
