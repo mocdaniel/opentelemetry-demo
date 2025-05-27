@@ -602,7 +602,7 @@ services:
     command: [
       "run",
       "--server.http.listen-addr=0.0.0.0:12345", # needed for access to debug UI
-      "--config.format=otelcol",                        # telling Alloy to use an OTel collector's config
+      "--config.format=otelcol",                 # telling Alloy to use an OTel collector's config
       "/etc/otelcol-config.yml"
     ]
     user: 0:0
@@ -618,8 +618,6 @@ services:
     depends_on:
       jaeger:
         condition: service_started
-      opensearch:
-        condition: service_healthy
     logging: *logging
     environment:
       - ENVOY_PORT
@@ -654,38 +652,3 @@ services:
       - "${PROMETHEUS_PORT}:${PROMETHEUS_PORT}"
     logging: *logging
 
-  # OpenSearch
-  opensearch:
-    image: ${OPENSEARCH_IMAGE}
-    container_name: opensearch
-    deploy:
-      resources:
-        limits:
-          memory: 1.1G
-    restart: unless-stopped
-    environment:
-      - cluster.name=demo-cluster
-      - node.name=demo-node
-      - bootstrap.memory_lock=true
-      - discovery.type=single-node
-      - OPENSEARCH_JAVA_OPTS=-Xms300m -Xmx300m
-      - DISABLE_INSTALL_DEMO_CONFIG=true
-      - DISABLE_SECURITY_PLUGIN=true
-      # Workaround on OSX for https://bugs.openjdk.org/browse/JDK-8345296
-      - _JAVA_OPTIONS
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    ports:
-      - "9200"
-    healthcheck:
-      test: curl -s http://localhost:9200/_cluster/health | grep -E '"status":"(green|yellow)"'
-      start_period: 10s
-      interval: 5s
-      timeout: 10s
-      retries: 10
-    logging: *logging
