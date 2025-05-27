@@ -5,16 +5,16 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_GRPC}
+        endpoint: otel-collector:4317
       http:
-        endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
+        endpoint: otel-collector:4318
         cors:
           allowed_origins:
             - "http://*"
             - "https://*"
   httpcheck/frontend-proxy:
     targets:
-      - endpoint: http://frontend-proxy:${env:ENVOY_PORT}
+      - endpoint: http://frontend-proxy:8080
   docker_stats:
     endpoint: unix:///var/run/docker.sock
   redis:
@@ -139,4 +139,4 @@ service:
             exporter:
               otlp:
                 protocol: http/protobuf
-                endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
+                endpoint: otel-collector:4318
