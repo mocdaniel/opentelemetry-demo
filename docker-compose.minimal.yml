@@ -592,14 +592,19 @@ services:
 
   # OpenTelemetry Collector
   otel-collector:
-    image: ${COLLECTOR_CONTRIB_IMAGE}
+    image: grafana/alloy:v1.8.3
     container_name: otel-collector
     deploy:
       resources:
         limits:
           memory: 200M
     restart: unless-stopped
-    command: [ "--config=/etc/otelcol-config.yml", "--config=/etc/otelcol-config-extras.yml" ]
+    command: [
+      "run",
+      "--server.http.listen-addr=0.0.0.0:12345", # needed for access to debug UI
+      "--config.format=otelcol",                        # telling Alloy to use an OTel collector's config
+      "/etc/otelcol-config.yml"
+    ]
     user: 0:0
     volumes:
       - ${HOST_FILESYSTEM}:/hostfs:ro
@@ -609,6 +614,7 @@ services:
     ports:
       - "${OTEL_COLLECTOR_PORT_GRPC}"
       - "${OTEL_COLLECTOR_PORT_HTTP}"
+      - "12345:12345"
     depends_on:
       jaeger:
         condition: service_started
