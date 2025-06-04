@@ -621,6 +621,8 @@ services:
         condition: service_started
     logging: *logging
     environment:
+      - ALLOY_S3_ACCESS_KEY
+      - ALLOY_S3_SECRET_KEY
       - ENVOY_PORT
       - HOST_FILESYSTEM
       - OTEL_COLLECTOR_HOST
