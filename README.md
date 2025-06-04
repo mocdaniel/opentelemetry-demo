@@ -1,3 +1,53 @@
+# OTel Demo with Grafana Alloy
+
+This is a fork of the [OTel demo](https://github.com/open-telemetry/opentelemetry-demo) that shows
+how to configure [Grafana Alloy](https://grafana.com/oss/alloy-opentelemetry-collector/) instead
+of the OTel Collector.
+
+Each branch builds on top of the previous branch, and changes a part of the stack's configuration.
+
+## General information
+
+### Starting the stack
+
+This fork only supports running the **minimal Docker demo** for now:
+
+```console
+make start-minimal
+```
+
+### Restarting Grafana Alloy
+
+In some steps, the only component that needs restarting is Alloy, so there's a make command for that, too:
+
+```console
+make restart-alloy
+```
+
+### Accessing Grafana Alloy
+
+Grafana Alloy's web UI is accessible on `http://localhost:12345`.
+
+### Using this Repository
+
+Along with the `main` branch, there are a few other branches pushed. The naming sticks to the format `<number>-<description>`, and they build on top of each other.
+
+Thus, in order to see how the OTel Collector could be replaced by Grafana Alloy, go through the branches one after the other, restart the compose stack using the `docker-compose.minimal.yml` file, and observe the behavior.
+
+> [!NOTE] Grafana Alloy Crashes
+> Some branches will not succeed in running Alloy. This is intended - move on to the next branch. ;)
+
+```console
+git checkout 1-alloy-drop-in
+make start-minimal
+# observe behavior etc.
+make stop-minimal
+
+# check out next branch
+git checkout 2-alloy-drop-in-fix-config
+make start-minimal
+```
+
 <!-- markdownlint-disable-next-line -->
 # <img src="https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png" alt="OTel logo" width="45"> OpenTelemetry Demo
 
